@@ -1,33 +1,91 @@
 "use client";
 
 import { rewrite } from "@/app/actions";
-import { useState } from "react";
+import { useState, useReducer, Reducer, useCallback } from "react";
 import { useFormStatus } from "react-dom";
 
+type State = {
+    content: string;
+    tone: string;
+    length: string;
+};
+
+type Action =
+    | { type: "UPDATE_CONTENT"; payload: string }
+    | { type: "UPDATE_TONE"; payload: string }
+    | { type: "UPDATE_LENGTH"; payload: string }
+    | { type: "RESET" };
+
+interface HistoryItem {
+    content: string;
+    tone: string;
+    length: string;
+    rewrittenContent: string;
+}
+
+const initialState = {
+    content: "",
+    tone: "",
+    length: "",
+};
+
+const reducer: Reducer<State, Action> = (state = initialState, action) => {
+    switch (action.type) {
+        case "UPDATE_CONTENT":
+            return { ...state, content: action.payload };
+        case "UPDATE_TONE":
+            return { ...state, tone: action.payload };
+        case "UPDATE_LENGTH":
+            return { ...state, length: action.payload };
+        case "RESET":
+            return initialState;
+        default:
+            return state;
+    }
+};
+
 const TextInput = () => {
+    const [history, setHistory] = useState<HistoryItem[]>([]);
+    const [{ content, tone, length }, dispatch] = useReducer(
+        reducer,
+        initialState
+    );
+
     const { pending } = useFormStatus();
-    const [content, setContent] = useState("");
-    const [tone, setTone] = useState("");
-    const [length, setLength] = useState("");
-    const [rewrittenContent, setRewrittenContent] = useState("");
 
-    const handleSubmit = async (event: React.FormEvent) => {
-        event.preventDefault();
+    const handleSubmit = useCallback(async () => {
+        const formData = new FormData();
+        formData.append("content", content);
+        formData.append("tone", tone);
+        formData.append("length", length);
 
-        const formData = new FormData(event.currentTarget as HTMLFormElement);
-        console.log("Event: ", formData);
         const rewrittenVersion = await rewrite(formData);
 
-        setRewrittenContent(rewrittenVersion ?? "");
-    };
+        setHistory((prevHistory) => [
+            ...prevHistory,
+            {
+                content,
+                tone,
+                length,
+                rewrittenContent: rewrittenVersion as string,
+            },
+        ]);
+
+        dispatch({ type: "RESET" });
+    }, [content, tone, length]);
 
     return (
-        <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+        <>
             <textarea
                 className="border border-black p-2"
                 name="content"
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
+                onChange={(e) =>
+                    dispatch({
+                        type: "UPDATE_CONTENT",
+                        payload: e.target.value,
+                    })
+                }
             />
             <div className="flex gap-5">
                 <label>
@@ -36,7 +94,12 @@ const TextInput = () => {
                         name="tone"
                         value="formal"
                         checked={tone === "formal"}
-                        onChange={(e) => setTone(e.target.value)}
+                        onChange={(e) =>
+                            dispatch({
+                                type: "UPDATE_TONE",
+                                payload: e.target.value,
+                            })
+                        }
                     />
                     Formal
                 </label>
@@ -46,7 +109,12 @@ const TextInput = () => {
                         name="tone"
                         value="casual"
                         checked={tone === "casual"}
-                        onChange={(e) => setTone(e.target.value)}
+                        onChange={(e) =>
+                            dispatch({
+                                type: "UPDATE_TONE",
+                                payload: e.target.value,
+                            })
+                        }
                     />
                     Casual
                 </label>
@@ -56,7 +124,12 @@ const TextInput = () => {
                         name="tone"
                         value="persuasive"
                         checked={tone === "persuasive"}
-                        onChange={(e) => setTone(e.target.value)}
+                        onChange={(e) =>
+                            dispatch({
+                                type: "UPDATE_TONE",
+                                payload: e.target.value,
+                            })
+                        }
                     />
                     Persuasive
                 </label>
@@ -68,7 +141,12 @@ const TextInput = () => {
                         name="length"
                         value="shorter"
                         checked={length === "shorter"}
-                        onChange={(e) => setLength(e.target.value)}
+                        onChange={(e) =>
+                            dispatch({
+                                type: "UPDATE_LENGTH",
+                                payload: e.target.value,
+                            })
+                        }
                     />
                     Shorter
                 </label>
@@ -78,7 +156,12 @@ const TextInput = () => {
                         name="length"
                         value="longer"
                         checked={length === "longer"}
-                        onChange={(e) => setLength(e.target.value)}
+                        onChange={(e) =>
+                            dispatch({
+                                type: "UPDATE_LENGTH",
+                                payload: e.target.value,
+                            })
+                        }
                     />
                     Longer
                 </label>
@@ -88,25 +171,33 @@ const TextInput = () => {
                         name="length"
                         value="concise"
                         checked={length === "concise"}
-                        onChange={(e) => setLength(e.target.value)}
+                        onChange={(e) =>
+                            dispatch({
+                                type: "UPDATE_LENGTH",
+                                payload: e.target.value,
+                            })
+                        }
                     />
                     Concise
                 </label>
             </div>
             <button
                 className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                type="submit"
                 disabled={pending}
+                onClick={handleSubmit}
             >
                 Rewrite
             </button>
-            {rewrittenContent && (
-                <>
-                    <p>{content}</p>
-                    <p>{rewrittenContent}</p>
-                </>
-            )}
-        </form>
+            <div className="gap-2 flex flex-col">
+                {history.length > 0 && <h2>History</h2>}
+                {history.map((item, index) => (
+                    <div key={index} className="border border-black">
+                        <p>{item.content}</p>
+                        <p>{item.rewrittenContent}</p>
+                    </div>
+                ))}
+            </div>
+        </>
     );
 };
 
