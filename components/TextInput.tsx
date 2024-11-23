@@ -7,12 +7,15 @@ import { useFormStatus } from "react-dom";
 const TextInput = () => {
     const { pending } = useFormStatus();
     const [content, setContent] = useState("");
+    const [tone, setTone] = useState("");
+    const [length, setLength] = useState("");
     const [rewrittenContent, setRewrittenContent] = useState("");
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
 
         const formData = new FormData(event.currentTarget as HTMLFormElement);
+        console.log("Event: ", formData);
         const rewrittenVersion = await rewrite(formData);
 
         setRewrittenContent(rewrittenVersion ?? "");
@@ -26,6 +29,70 @@ const TextInput = () => {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
             />
+            <div className="flex gap-5">
+                <label>
+                    <input
+                        type="radio"
+                        name="tone"
+                        value="formal"
+                        checked={tone === "formal"}
+                        onChange={(e) => setTone(e.target.value)}
+                    />
+                    Formal
+                </label>
+                <label>
+                    <input
+                        type="radio"
+                        name="tone"
+                        value="casual"
+                        checked={tone === "casual"}
+                        onChange={(e) => setTone(e.target.value)}
+                    />
+                    Casual
+                </label>
+                <label>
+                    <input
+                        type="radio"
+                        name="tone"
+                        value="persuasive"
+                        checked={tone === "persuasive"}
+                        onChange={(e) => setTone(e.target.value)}
+                    />
+                    Persuasive
+                </label>
+            </div>
+            <div className="flex gap-5">
+                <label>
+                    <input
+                        type="radio"
+                        name="length"
+                        value="shorter"
+                        checked={length === "shorter"}
+                        onChange={(e) => setLength(e.target.value)}
+                    />
+                    Shorter
+                </label>
+                <label>
+                    <input
+                        type="radio"
+                        name="length"
+                        value="longer"
+                        checked={length === "longer"}
+                        onChange={(e) => setLength(e.target.value)}
+                    />
+                    Longer
+                </label>
+                <label>
+                    <input
+                        type="radio"
+                        name="length"
+                        value="concise"
+                        checked={length === "concise"}
+                        onChange={(e) => setLength(e.target.value)}
+                    />
+                    Concise
+                </label>
+            </div>
             <button
                 className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                 type="submit"

@@ -28,26 +28,35 @@ import { PromptTemplate } from "@langchain/core/prompts";
 //     })
 // );
 
-const getPrompt = async (content: string) => {
+interface InputProps {
+    content: string;
+    tone: string;
+    length: string;
+}
+
+const getPrompt = async ({ content, tone, length }: InputProps) => {
     // const format_instructions = parser.getFormatInstructions();
 
     const prompt = new PromptTemplate({
-        template: "Rewrite the following sentence {user_input}",
+        template:
+            "Rewrite the following sentence in a {tone}, making it {length}: {content}",
 
         // "Analyze the following journal entry. Follow the instructions and format your response to match the format instructions, no matter what! \n{format_instructions}\n{entry}",
-        inputVariables: ["user_input"],
+        inputVariables: ["content", "tone", "length"],
         // partialVariables: { format_instructions },
     });
 
     const input = await prompt.format({
-        user_input: content,
+        content,
+        tone,
+        length,
     });
 
     return input;
 };
 
-export const analyze = async (content: string) => {
-    const input = await getPrompt(content);
+export const analyze = async (props: InputProps) => {
+    const input = await getPrompt(props);
 
     const model = new OpenAI({
         temperature: 1,
