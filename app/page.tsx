@@ -1,10 +1,24 @@
-import TextInput from "@/components/TextInput";
+import WritingEditor from "@/components/WritingEditor";
 
 export default function Home() {
     return (
-        <div className="w-screen h-screen flex justify-center items-center flex-col gap-5">
-            <h1>AI-Powered Writing Assistant</h1>
-            <TextInput />
+        <div className="min-h-screen bg-[#FAFAFA]">
+            <main className="container py-4 px-4 md:py-8 md:px-8">
+                <div className="max-w-4xl mx-auto">
+                    <div className="mb-6 md:mb-8 text-center animate-fade-in">
+                        <span className="px-3 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                            AI-Powered
+                        </span>
+                        <h1 className="mt-4 text-2xl md:text-4xl font-semibold tracking-tight">
+                            Writing Assistant
+                        </h1>
+                        <p className="mt-2 text-sm md:text-base text-gray-600">
+                            Start writing and let AI enhance your content
+                        </p>
+                    </div>
+                    <WritingEditor />
+                </div>
+            </main>
         </div>
     );
 }
