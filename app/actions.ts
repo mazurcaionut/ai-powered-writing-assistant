@@ -9,7 +9,9 @@ export async function rewrite(formData: FormData) {
         length: formData.get("length") as string,
     };
 
-    const rewrittenVersion = await analyze(rawFormData);
+    const output = await analyze(rawFormData);
 
-    return rewrittenVersion;
+    console.log("Output: ", output);
+
+    return output;
 }

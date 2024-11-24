@@ -1,8 +1,9 @@
 "use client";
 
 import { rewrite } from "@/app/actions";
-import { useState, useReducer, Reducer, useCallback } from "react";
+import { useState, useReducer, Reducer, useCallback, useEffect } from "react";
 import { useFormStatus } from "react-dom";
+import { MdDelete as DeleteIcon } from "react-icons/md";
 
 type State = {
     content: string;
@@ -21,6 +22,7 @@ interface HistoryItem {
     tone: string;
     length: string;
     rewrittenContent: string;
+    explanation: string;
 }
 
 const initialState = {
@@ -45,6 +47,7 @@ const reducer: Reducer<State, Action> = (state = initialState, action) => {
 };
 
 const TextInput = () => {
+    const [loading, setLoading] = useState(true);
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [{ content, tone, length }, dispatch] = useReducer(
         reducer,
@@ -53,13 +56,24 @@ const TextInput = () => {
 
     const { pending } = useFormStatus();
 
+    const handleDownload = () => {
+        const data = JSON.stringify(history);
+        const blob = new Blob([data], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "history.txt";
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     const handleSubmit = useCallback(async () => {
         const formData = new FormData();
         formData.append("content", content);
         formData.append("tone", tone);
         formData.append("length", length);
 
-        const rewrittenVersion = await rewrite(formData);
+        const output = await rewrite(formData);
 
         setHistory((prevHistory) => [
             ...prevHistory,
@@ -67,12 +81,41 @@ const TextInput = () => {
                 content,
                 tone,
                 length,
-                rewrittenContent: rewrittenVersion as string,
+                rewrittenContent: output?.rewrittenContent as string,
+                explanation: output?.explanation as string,
             },
         ]);
 
         dispatch({ type: "RESET" });
     }, [content, tone, length]);
+
+    useEffect(() => {
+        const fetchStoredHistory = async () => {
+            setLoading(true);
+            try {
+                const storedHistory = localStorage.getItem("history");
+                if (storedHistory) {
+                    setHistory(JSON.parse(storedHistory));
+                }
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStoredHistory();
+    }, []);
+
+    // useEffect(() => {
+    //     const storedHistory = localStorage.getItem("history");
+    //     if (storedHistory) {
+    //         setHistory(JSON.parse(storedHistory));
+    //     }
+    // }, []);
+
+    useEffect(() => {
+        localStorage.setItem("history", JSON.stringify(history));
+    }, [history]);
 
     return (
         <>
@@ -188,15 +231,42 @@ const TextInput = () => {
             >
                 Rewrite
             </button>
-            <div className="gap-2 flex flex-col">
-                {history.length > 0 && <h2>History</h2>}
-                {history.map((item, index) => (
-                    <div key={index} className="border border-black">
-                        <p>{item.content}</p>
-                        <p>{item.rewrittenContent}</p>
-                    </div>
-                ))}
-            </div>
+            {loading ? (
+                <h1>Loading...</h1>
+            ) : (
+                <div className="gap-2 flex flex-col">
+                    <button
+                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                        onClick={handleDownload}
+                    >
+                        Download history
+                    </button>
+                    {history.length > 0 && <h2>History</h2>}
+                    {history.map((item, index) => (
+                        <div
+                            key={index}
+                            className="flex border border-black gap-4 items-center justify-between"
+                        >
+                            <div>
+                                <p>{item.content}</p>
+                                <p>{item.rewrittenContent}</p>
+                                <p>{`Explanation: ${item.explanation}`}</p>
+                                <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                    Show explanation
+                                </button>
+                            </div>
+                            <DeleteIcon
+                                className="cursor-pointer"
+                                onClick={() =>
+                                    setHistory(
+                                        history.filter((_, i) => i !== index)
+                                    )
+                                }
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
         </>
     );
 };
