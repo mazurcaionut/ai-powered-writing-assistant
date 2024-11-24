@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Clock, Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,18 +26,18 @@ interface HistorySectionProps {
 const HistorySection = ({ history, onDeleteEntry }: HistorySectionProps) => {
     const { toast } = useToast();
 
-    const formatDate = (date: Date) => {
+    const formatDate = (date: string | Date) => {
+        const dateObject = new Date(date);
         return new Intl.DateTimeFormat("en-US", {
             hour: "numeric",
             minute: "numeric",
             hour12: true,
             month: "short",
             day: "numeric",
-        }).format(date);
+        }).format(dateObject);
     };
 
     const handleDownload = () => {
-        console.log("Generating history download...");
         let content = "Writing History\n\n";
 
         history.forEach((entry, index) => {
@@ -65,7 +64,6 @@ const HistorySection = ({ history, onDeleteEntry }: HistorySectionProps) => {
     };
 
     const handleDelete = (index: number) => {
-        console.log("Deleting history entry at index:", index);
         onDeleteEntry(index);
         toast({
             title: "Entry deleted",
@@ -104,17 +102,13 @@ const HistorySection = ({ history, onDeleteEntry }: HistorySectionProps) => {
                                         {entry.lengthFactor}x
                                     </span>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="opacity-50 hover:opacity-100"
+                                <Trash2
+                                    className="h-4 w-4"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         handleDelete(index);
                                     }}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
+                                />
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
