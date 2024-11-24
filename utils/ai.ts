@@ -8,12 +8,12 @@ const parser = StructuredOutputParser.fromZodSchema(
         rewrittenContent: z
             .string()
             .describe(
-                `Rewritten version of the original text, taking into account the tone, length and content specified in the input.`
+                "A carefully rewritten version of the original text that maintains the core message while adapting to the requested tone and length. The rewrite should be coherent and natural-sounding."
             ),
         explanation: z
             .string()
             .describe(
-                "explanation of how the rewritten version improves the original."
+                "A detailed explanation of the specific changes made, including how the tone was adjusted and why certain stylistic choices were made to meet the requirements."
             ),
     })
 );
@@ -29,9 +29,18 @@ const getPrompt = async ({ content, tone, length }: InputProps) => {
 
     const prompt = new PromptTemplate({
         template:
-            "Rewrite the following sentence in a {tone}, making it {length}: {content}. Follow the instructions and format your response to match the format instructions, no matter what! \n{format_instructions}",
+        `Your task is to rewrite the given text professionally and thoughtfully.
 
-        // "Analyze the following journal entry. Follow the instructions and format your response to match the format instructions, no matter what! \n{format_instructions}\n{entry}",
+        Input Text: {content}
+
+        Requirements:
+        - Adapt the text to a {tone} tone
+        - Make it approximately {length}x the original length
+        - Maintain the core message and meaning
+        - Ensure natural flow and readability
+        - Use appropriate vocabulary for the requested tone
+
+        {format_instructions}`,
         inputVariables: ["content", "tone", "length"],
         partialVariables: { format_instructions },
     });

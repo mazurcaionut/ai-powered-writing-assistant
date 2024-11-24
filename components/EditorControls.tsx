@@ -13,6 +13,8 @@ interface EditorControlsProps {
 const EditorControls = ({
     lengthFactor,
     setLengthFactor,
+    tone,
+    setTone,
 }: EditorControlsProps) => {
     return (
         <div className="flex flex-col space-y-6 md:space-y-4">
@@ -22,7 +24,8 @@ const EditorControls = ({
                 </label>
                 <RadioGroup
                     name="tone"
-                    defaultValue="formal"
+                    value={tone}
+                    onValueChange={setTone}
                     className="flex flex-wrap gap-4"
                 >
                     <div className="flex items-center space-x-2">
