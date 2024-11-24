@@ -1,4 +1,5 @@
 import WritingEditor from "@/components/WritingEditor";
+import { Toaster } from "@/components/ui/toaster";
 
 export default function Home() {
     return (
@@ -17,6 +18,7 @@ export default function Home() {
                         </p>
                     </div>
                     <WritingEditor />
+                    <Toaster />
                 </div>
             </main>
         </div>

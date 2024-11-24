@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useActionState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
-// import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import EditorControls from "./EditorControls";
@@ -16,20 +16,29 @@ interface HistoryEntry {
     tone: string;
     lengthFactor: number;
     timestamp: Date;
+    explanation: string;
 }
 
 const WritingEditor = () => {
-    const [state, action, isPending] = useActionState(rewrite, null);
     const [content, setContent] = useState("");
-    const [wordCount, setWordCount] = useState(0);
-    const [tone, setTone] = useState("neutral");
+    const [rewrittenContent, setRewrittenContent] = useState("");
+    const [explanation, setExplanation] = useState("");
+    const [tone, setTone] = useState("formal");
     const [lengthFactor, setLengthFactor] = useState([1.0]);
     const [history, setHistory] = useState<HistoryEntry[]>([]);
-    // const { toast } = useToast();
+    const [isProcessing, setIsProcessing] = useState(false);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        if (rewrittenContent && explanation) {
+            setRewrittenContent("");
+            setExplanation("");
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [content]);
 
     useEffect(() => {
         const fetchStoredHistory = async () => {
-            // setLoading(true);
             try {
                 const storedHistory = localStorage.getItem("history");
                 if (storedHistory) {
@@ -37,8 +46,6 @@ const WritingEditor = () => {
                 }
             } catch (error) {
                 console.error(error);
-            } finally {
-                // setLoading(false);
             }
         };
         fetchStoredHistory();
@@ -48,123 +55,74 @@ const WritingEditor = () => {
         localStorage.setItem("history", JSON.stringify(history));
     }, [history]);
 
-    useEffect(() => {
-        if (state && state.data && !state.errors) {
-            setHistory((prevHistory) => [
-                ...prevHistory,
-                {
-                    originalText: state.data.content,
-                    rewrittenText: state.data.rewrittenContent,
-                    tone: state.data.tone,
-                    lengthFactor: state.data.length as unknown as number,
-                    timestamp: new Date(),
-                },
-            ]);
-        }
-    }, [state]);
+    const wordCount = useMemo(
+        () =>
+            content
+                .trim()
+                .split(/\s+/)
+                .filter((word) => word.length > 0).length,
+        [content]
+    );
 
-    useEffect(() => {
-        const words = content
-            .trim()
-            .split(/\s+/)
-            .filter((word) => word.length > 0);
-        setWordCount(words.length);
-    }, [content]);
-
-    const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
         setContent(e.target.value);
-        console.log("Content updated:", e.target.value);
-    };
 
-    const handleDeleteHistoryEntry = (index: number) => {
-        console.log("Deleting history entry at index:", index);
+    const handleDeleteHistoryEntry = (index: number) =>
         setHistory((prevHistory) => prevHistory.filter((_, i) => i !== index));
+
+    const handleRewrite = async () => {
+        if (content.trim().length === 0) {
+            toast({
+                title: "No content to rewrite",
+                description: "Please write something first.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setIsProcessing(true);
+
+        const formData = new FormData();
+        formData.append("content", content);
+        formData.append("tone", tone);
+        formData.append("length", lengthFactor[0].toString());
+
+        const response = await rewrite(formData);
+
+        setIsProcessing(false);
+
+        if (response.errors) {
+            toast({
+                title: "Something went wrong",
+                description: "There was an error rewriting your text.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        const { explanation, rewrittenContent } = response.data;
+
+        setRewrittenContent(rewrittenContent);
+        setExplanation(explanation);
+
+        const newHistoryEntry: HistoryEntry = {
+            explanation,
+            originalText: content,
+            rewrittenText: rewrittenContent,
+            tone,
+            lengthFactor: lengthFactor[0],
+            timestamp: new Date(),
+        };
+        setHistory((prev) => [newHistoryEntry, ...prev]);
+
+        toast({
+            title: "Text Rewritten",
+            description: "Your text has been rewritten with AI assistance.",
+        });
     };
-
-    // const handleRewrite = async () => {
-    //     if (content.trim().length === 0) {
-    //         toast({
-    //             title: "No content to rewrite",
-    //             description: "Please write something first.",
-    //             variant: "destructive",
-    //         });
-    //         return;
-    //     }
-
-    //     setIsProcessing(true);
-    //     console.log(
-    //         "Requesting rewrite with tone:",
-    //         tone,
-    //         "length factor:",
-    //         lengthFactor[0]
-    //     );
-
-    //     // Simulate AI processing
-    //     setTimeout(() => {
-    //         let mockRewrite = content
-    //             .split(".")
-    //             .map((sentence) => sentence.trim())
-    //             .filter((sentence) => sentence.length > 0)
-    //             .map((sentence) => {
-    //                 let modifiedSentence = sentence;
-    //                 switch (tone) {
-    //                     case "formal":
-    //                         modifiedSentence = `Indeed, ${sentence}`;
-    //                         break;
-    //                     case "casual":
-    //                         modifiedSentence = `Hey, ${sentence}`;
-    //                         break;
-    //                     case "professional":
-    //                         modifiedSentence = `Furthermore, ${sentence}`;
-    //                         break;
-    //                     default:
-    //                         break;
-    //                 }
-    //                 return `${modifiedSentence}. `;
-    //             })
-    //             .join("\n\n");
-
-    //         if (lengthFactor[0] < 1) {
-    //             mockRewrite = mockRewrite
-    //                 .split("\n\n")
-    //                 .slice(
-    //                     0,
-    //                     Math.ceil(
-    //                         mockRewrite.split("\n\n").length * lengthFactor[0]
-    //                     )
-    //                 )
-    //                 .join("\n\n");
-    //         } else if (lengthFactor[0] > 1) {
-    //             const extraSentences = Array(
-    //                 Math.ceil((lengthFactor[0] - 1) * 2)
-    //             ).fill("Additionally, this expands upon the previous point.");
-    //             mockRewrite += "\n\n" + extraSentences.join("\n\n");
-    //         }
-
-    //         setRewrittenContent(mockRewrite);
-    //         setIsProcessing(false);
-
-    //         const newHistoryEntry: HistoryEntry = {
-    //             originalText: content,
-    //             rewrittenText: mockRewrite,
-    //             tone,
-    //             lengthFactor: lengthFactor[0],
-    //             timestamp: new Date(),
-    //         };
-    //         setHistory((prev) => [newHistoryEntry, ...prev]);
-
-    //         toast({
-    //             title: "Text Rewritten",
-    //             description: "Your text has been rewritten with AI assistance.",
-    //         });
-    //     }, 1500);
-    // };
 
     return (
-        <form
-            className="w-full max-w-6xl mx-auto space-y-4 animate-fade-in"
-            action={action}
-        >
+        <div className="w-full max-w-6xl mx-auto space-y-4 animate-fade-in">
             <div className="px-2 md:px-0">
                 <EditorControls
                     tone={tone}
@@ -179,20 +137,19 @@ const WritingEditor = () => {
                     {wordCount} {wordCount === 1 ? "word" : "words"}
                 </div>
                 <div className="flex gap-2 w-full md:w-auto justify-end">
-                    {state?.data?.rewrittenContent && (
+                    {rewrittenContent && explanation && (
                         <ExplanationDialog
                             originalText={content}
-                            rewrittenText={state.data.rewrittenContent}
-                            tone={tone}
-                            lengthFactor={lengthFactor[0]}
+                            rewrittenText={rewrittenContent}
+                            explanation={explanation}
                         />
                     )}
                     <Button
-                        disabled={isPending}
+                        disabled={isProcessing}
                         className="gap-2"
-                        type="submit"
+                        onClick={handleRewrite}
                     >
-                        {isPending ? (
+                        {isProcessing ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                             <RefreshCw className="h-4 w-4" />
@@ -224,9 +181,9 @@ const WritingEditor = () => {
                     </label>
                     <ScrollArea className="h-[300px] md:h-[500px] w-full rounded-md border">
                         <div className="p-4 text-base md:text-lg leading-relaxed">
-                            {state?.data?.rewrittenContent ? (
+                            {rewrittenContent ? (
                                 <div className="whitespace-pre-wrap">
-                                    {state?.data.rewrittenContent}
+                                    {rewrittenContent}
                                 </div>
                             ) : (
                                 <div className="text-gray-400 italic">
@@ -243,7 +200,7 @@ const WritingEditor = () => {
                 history={history}
                 onDeleteEntry={handleDeleteHistoryEntry}
             />
-        </form>
+        </div>
     );
 };
 

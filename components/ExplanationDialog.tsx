@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -15,31 +14,14 @@ import { Info } from "lucide-react";
 interface ExplanationDialogProps {
     originalText: string;
     rewrittenText: string;
-    tone: string;
-    lengthFactor: number;
+    explanation: string;
 }
 
 const ExplanationDialog = ({
     originalText,
     rewrittenText,
-    tone,
-    lengthFactor,
+    explanation,
 }: ExplanationDialogProps) => {
-    const generateExplanation = () => {
-        // This would be replaced with actual AI analysis in production
-        return `This rewrite improves the original text in several ways:
-
-1. Tone Adjustment: The text has been adapted to a ${tone} tone, making it more suitable for your intended audience.
-
-2. Length Optimization: The content has been ${
-            lengthFactor < 1 ? "condensed" : "expanded"
-        } to ${lengthFactor}x the original length while maintaining key information.
-
-3. Structure: The rewritten version improves readability through better paragraph breaks and sentence structure.
-
-4. Clarity: Complex phrases have been simplified while maintaining the core message.`;
-    };
-
     return (
         <Dialog>
             <DialogTrigger asChild>
@@ -50,13 +32,11 @@ const ExplanationDialog = ({
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>Understanding the Improvements</DialogTitle>
+                    <DialogTitle>Understanding the Improvement</DialogTitle>
                 </DialogHeader>
                 <ScrollArea className="max-h-[60vh]">
                     <div className="space-y-4 p-4">
-                        <div className="whitespace-pre-wrap">
-                            {generateExplanation()}
-                        </div>
+                        <div className="whitespace-pre-wrap">{explanation}</div>
 
                         <div className="mt-6 space-y-4">
                             <div>
