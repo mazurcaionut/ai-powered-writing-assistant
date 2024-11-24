@@ -1,6 +1,6 @@
 "use client";
 
-import { rewrite } from "@/app/actions";
+// import { rewrite } from "@/app/actions";
 import { useState, useReducer, Reducer, useCallback, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import { MdDelete as DeleteIcon } from "react-icons/md";
@@ -73,18 +73,18 @@ const TextInput = () => {
         formData.append("tone", tone);
         formData.append("length", length);
 
-        const output = await rewrite(formData);
+        // const output = await rewrite(formData);
 
-        setHistory((prevHistory) => [
-            ...prevHistory,
-            {
-                content,
-                tone,
-                length,
-                rewrittenContent: output?.rewrittenContent as string,
-                explanation: output?.explanation as string,
-            },
-        ]);
+        // setHistory((prevHistory) => [
+        //     ...prevHistory,
+        //     {
+        //         content,
+        //         tone,
+        //         length,
+        //         rewrittenContent: output?.rewrittenContent as string,
+        //         explanation: output?.explanation as string,
+        //     },
+        // ]);
 
         dispatch({ type: "RESET" });
     }, [content, tone, length]);
